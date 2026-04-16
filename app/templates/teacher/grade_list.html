@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block title %}Grade Management{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Grade Management</h2>
+    <a href="{{ url_for('teacher.grade_select') }}" class="btn btn-primary">+ Add Grades</a>
+</div>
+
+{% if grades %}
+<div class="table-responsive">
+    <table class="table table-bordered table-hover align-middle">
+        <thead class="table-dark">
+            <tr>
+                <th>Student</th>
+                <th>Course</th>
+                <th>Exam</th>
+                <th>Exam Date</th>
+                <th>Score</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for g in grades %}
+            <tr>
+                <td>{{ g.student.name }}</td>
+                <td>{{ g.course.course_name }}</td>
+                <td>{{ g.exam.name }}</td>
+                <td>{{ g.exam.exam_date }}</td>
+                <td>{{ g.score }}</td>
+                <td>
+                    <form method="POST" action="{{ url_for('teacher.delete_grade', grade_id=g.grade_id) }}"
+                          class="d-inline" onsubmit="return confirm('Delete this grade?')">
+                        <button class="btn btn-sm btn-outline-danger">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<p class="text-muted">No grades recorded yet.</p>
+{% endif %}
+
+<a href="{{ url_for('teacher.dashboard') }}" class="btn btn-secondary mt-2">Back</a>
+{% endblock %}

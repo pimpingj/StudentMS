@@ -1,0 +1,209 @@
+{% extends 'base.html' %}
+{% block title %}ML Predictions{% endblock %}
+{% block content %}
+<h2 class="mb-4">ML Predictions</h2>
+
+<!-- ── Model Comparison Cards + Charts ── -->
+<div class="row mb-3">
+{% for target, models in metrics.items() %}
+{% set label = 'Next Exam Score' if target == 'next_exam' else 'Final Grade' %}
+{% set lr = models.linear_regression %}
+{% set dt = models.decision_tree %}
+<div class="col-md-6 mb-4">
+
+    <!-- Metrics table -->
+    <div class="card shadow-sm">
+        <div class="card-header fw-bold">{{ label }} — Model Comparison</div>
+        <div class="card-body p-0">
+            <table class="table table-bordered mb-0">
+                <thead class="table-light">
+                    <tr><th>Model</th><th>MAE</th><th>RMSE</th><th>R²</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Linear Regression</td>
+                        <td>{{ lr.mae }}</td>
+                        <td>{{ lr.rmse }}</td>
+                        <td><span class="badge {{ 'bg-success' if lr.r2 >= 0.8 else ('bg-warning text-dark' if lr.r2 >= 0.6 else 'bg-danger') }}">{{ lr.r2 }}</span></td>
+                    </tr>
+                    <tr>
+                        <td>Decision Tree</td>
+                        <td>{{ dt.mae }}</td>
+                        <td>{{ dt.rmse }}</td>
+                        <td><span class="badge {{ 'bg-success' if dt.r2 >= 0.8 else ('bg-warning text-dark' if dt.r2 >= 0.6 else 'bg-danger') }}">{{ dt.r2 }}</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <!-- Better model summary line -->
+        <div class="card-footer text-muted small">
+            <i class="bi bi-trophy-fill text-warning me-1"></i>
+            {% if lr.r2 >= dt.r2 %}
+            <strong>Linear Regression</strong> performs better with higher R²
+            ({{ lr.r2 }} vs {{ dt.r2 }})
+            {% else %}
+            <strong>Decision Tree</strong> performs better with higher R²
+            ({{ dt.r2 }} vs {{ lr.r2 }})
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Bar chart -->
+    <div class="card shadow-sm mt-2">
+        <div class="card-body">
+            <canvas id="chart_{{ target }}" height="160"></canvas>
+        </div>
+    </div>
+
+</div>
+{% endfor %}
+</div>
+
+<!-- ── Course Selector ── -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label fw-semibold">Select Course to Predict</label>
+                <select name="course_id" class="form-select">
+                    <option value="">-- Select Course --</option>
+                    {% for c in courses %}
+                    <option value="{{ c.course_id }}"
+                        {{ 'selected' if course_id == c.course_id }}>
+                        {{ c.course_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary">Run Prediction</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ── Results Table ── -->
+{% if student_preds %}
+<div class="d-flex justify-content-between align-items-center mb-2">
+    <h5>Predictions for <strong>{{ selected_course.course_name }}</strong></h5>
+    <form method="POST"
+          action="{{ url_for('teacher.prediction_dashboard', course_id=course_id) }}">
+        <button class="btn btn-success btn-sm">
+            <i class="bi bi-save"></i> Save to DB
+        </button>
+    </form>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-bordered table-hover align-middle">
+        <thead class="table-dark">
+            <tr>
+                <th>Student</th>
+                <th class="text-center">Avg Score</th>
+                <th class="text-center">Attendance %</th>
+                <th class="text-center">Last Exam</th>
+                <th class="text-center">Next Exam <small class="fw-normal">(LR)</small></th>
+                <th class="text-center">Final Grade <small class="fw-normal">(LR)</small></th>
+                <th class="text-center">Risk Level</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in student_preds %}
+            {% set feat     = row.features %}
+            {% set lr_next  = row.next_exam.linear_regression %}
+            {% set lr_final = row.final_grade.linear_regression %}
+            <tr>
+                <td>{{ row.student.name }}</td>
+                <td class="text-center">{{ feat[0] | round(1) }}</td>
+                <td class="text-center">{{ feat[1] | round(1) }}%</td>
+                <td class="text-center">{{ feat[3] | round(1) }}</td>
+                <td class="text-center fw-bold text-primary">{{ lr_next }}</td>
+                <td class="text-center fw-bold text-primary">{{ lr_final }}</td>
+                <td class="text-center">
+                    {% if lr_next < 50 %}
+                    <span class="badge bg-danger">High Risk</span>
+                    {% elif lr_next <= 65 %}
+                    <span class="badge bg-warning text-dark">At Risk</span>
+                    {% else %}
+                    <span class="badge bg-success">On Track</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<p class="text-muted small mt-1">
+    * Models trained on 400 synthetic records. Risk level based on Linear Regression next-exam prediction.
+    Assignment rate is approximated from average score when not explicitly tracked.
+</p>
+
+{% elif course_id %}
+<div class="alert alert-warning">
+    No students with sufficient grade &amp; attendance data found for this course.
+</div>
+{% endif %}
+
+<a href="{{ url_for('teacher.dashboard') }}" class="btn btn-secondary mt-3">Back</a>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+const chartData = {
+    next_exam: {
+        title:   'Next Exam Score — MAE & RMSE',
+        lr_mae:  {{ metrics.next_exam.linear_regression.mae }},
+        lr_rmse: {{ metrics.next_exam.linear_regression.rmse }},
+        dt_mae:  {{ metrics.next_exam.decision_tree.mae }},
+        dt_rmse: {{ metrics.next_exam.decision_tree.rmse }},
+    },
+    final_grade: {
+        title:   'Final Grade — MAE & RMSE',
+        lr_mae:  {{ metrics.final_grade.linear_regression.mae }},
+        lr_rmse: {{ metrics.final_grade.linear_regression.rmse }},
+        dt_mae:  {{ metrics.final_grade.decision_tree.mae }},
+        dt_rmse: {{ metrics.final_grade.decision_tree.rmse }},
+    }
+};
+
+['next_exam', 'final_grade'].forEach(target => {
+    const d = chartData[target];
+    new Chart(document.getElementById('chart_' + target), {
+        type: 'bar',
+        data: {
+            labels: ['MAE', 'RMSE'],
+            datasets: [
+                {
+                    label: 'Linear Regression',
+                    data: [d.lr_mae, d.lr_rmse],
+                    backgroundColor: 'rgba(54, 162, 235, 0.75)',
+                    borderColor:     'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Decision Tree',
+                    data: [d.dt_mae, d.dt_rmse],
+                    backgroundColor: 'rgba(40, 167, 69, 0.75)',
+                    borderColor:     'rgba(40, 167, 69, 1)',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title:  { display: true, text: d.title, font: { size: 13 } },
+                legend: { position: 'bottom' }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: { display: true, text: 'Error Score' }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}Add Grades — Select Exam{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-body p-4">
+                <h4 class="mb-4">Add Grades — Step 1</h4>
+                {% if exams %}
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Exam</label>
+                        <select name="exam_id" class="form-select" required>
+                            <option value="">-- Select Exam --</option>
+                            {% for e in exams %}
+                            <option value="{{ e.exam_id }}">
+                                {{ e.name }} ({{ e.exam_date }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Course</label>
+                        <select name="course_id" class="form-select" required>
+                            <option value="">-- Select Course --</option>
+                            {% for c in courses %}
+                            <option value="{{ c.course_id }}">{{ c.course_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('teacher.grade_list') }}" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">Next →</button>
+                    </div>
+                </form>
+                {% else %}
+                <div class="alert alert-warning">
+                    No exams found. <a href="{{ url_for('teacher.create_exam') }}">Create an exam first.</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

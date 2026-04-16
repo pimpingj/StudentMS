@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block title %}My Exams{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>My Exams</h2>
+    <a href="{{ url_for('teacher.create_exam') }}" class="btn btn-primary">+ Create Exam</a>
+</div>
+
+{% if exams %}
+<div class="table-responsive">
+    <table class="table table-bordered table-hover align-middle">
+        <thead class="table-dark">
+            <tr>
+                <th>Exam Name</th>
+                <th>Date</th>
+                <th>Classes</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for e in exams %}
+            <tr>
+                <td>{{ e.name }}</td>
+                <td>{{ e.exam_date }}</td>
+                <td>
+                    {% for c in e.classes %}
+                    <span class="badge bg-secondary">{{ c.class_name }}</span>
+                    {% endfor %}
+                </td>
+                <td>
+                    <form method="POST" action="{{ url_for('teacher.delete_exam', exam_id=e.exam_id) }}"
+                          class="d-inline" onsubmit="return confirm('Delete exam {{ e.name }}?')">
+                        <button class="btn btn-sm btn-outline-danger">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<p class="text-muted">No exams yet. Create one to start recording grades.</p>
+{% endif %}
+
+<a href="{{ url_for('teacher.dashboard') }}" class="btn btn-secondary mt-2">Back</a>
+{% endblock %}

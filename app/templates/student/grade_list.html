@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% block title %}My Grades{% endblock %}
+{% block content %}
+<h2 class="mb-4">My Grades</h2>
+
+{% if rows %}
+<div class="table-responsive">
+    <table class="table table-bordered table-hover align-middle">
+        <thead class="table-dark">
+            <tr>
+                <th>Course</th>
+                <th>Exam</th>
+                <th>Date</th>
+                <th class="text-center">Score</th>
+                <th class="text-center">Class Avg</th>
+                <th class="text-center">vs. Average</th>
+                <th class="text-center">Rank</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in rows %}
+            {% set g = r.grade %}
+            <tr class="{% if g.score < 60 %}table-danger{% endif %}">
+                <td>{{ g.course.course_name }}</td>
+                <td>{{ g.exam.name }}</td>
+                <td>{{ g.exam.exam_date }}</td>
+                <td class="text-center fw-semibold">{{ g.score }}</td>
+                <td class="text-center text-muted">
+                    {{ r.class_avg if r.class_avg is not none else '—' }}
+                </td>
+                <td class="text-center fw-semibold">
+                    {% if r.diff is not none %}
+                        {% if r.diff > 0 %}
+                            <span class="text-success">+{{ r.diff }}</span>
+                        {% elif r.diff < 0 %}
+                            <span class="text-danger">{{ r.diff }}</span>
+                        {% else %}
+                            <span class="text-muted">0</span>
+                        {% endif %}
+                    {% else %}
+                        <span class="text-muted">—</span>
+                    {% endif %}
+                </td>
+                <td class="text-center">
+                    {% if r.rank is not none %}
+                        {% if r.rank == 1 %}
+                            <span class="badge bg-warning text-dark">
+                                <i class="bi bi-trophy-fill"></i> 1st
+                            </span>
+                        {% else %}
+                            <span class="text-muted">{{ r.rank }} / {{ r.n }}</span>
+                        {% endif %}
+                    {% else %}
+                        <span class="text-muted">—</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<p class="text-muted">No grades available yet.</p>
+{% endif %}
+
+<a href="{{ url_for('student.dashboard') }}" class="btn btn-secondary mt-2">Back</a>
+{% endblock %}

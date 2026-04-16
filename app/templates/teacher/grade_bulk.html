@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block title %}Add Grades — Enter Scores{% endblock %}
+{% block content %}
+<h4 class="mb-1">Add Grades — Step 2</h4>
+<p class="text-muted mb-3">
+    Exam: <strong>{{ exam.name }}</strong> &nbsp;|&nbsp;
+    Date: <strong>{{ exam.exam_date }}</strong> &nbsp;|&nbsp;
+    Course: <strong>{{ course.course_name }}</strong>
+</p>
+
+<form method="POST"
+      action="{{ url_for('teacher.grade_bulk', exam_id=exam_id, course_id=course_id, class_ids=class_ids) }}">
+    {% if students %}
+    <div class="table-responsive">
+        <table class="table table-bordered align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>#</th>
+                    <th>Student</th>
+                    <th style="width:200px">Score (0–100)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in students %}
+                <tr>
+                    <td class="text-muted">{{ loop.index }}</td>
+                    <td>{{ s.name }}</td>
+                    <td>
+                        <input type="number" name="score_{{ s.student_id }}"
+                               class="form-control" step="0.1" min="0" max="100"
+                               value="{{ existing_grades.get(s.student_id, '') }}"
+                               placeholder="Leave blank to skip">
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="d-flex justify-content-between">
+        <a href="{{ url_for('teacher.grade_select') }}" class="btn btn-secondary">← Back</a>
+        <button type="submit" class="btn btn-primary">Save Grades</button>
+    </div>
+    {% else %}
+    <div class="alert alert-warning">No students found for the selected exam classes.</div>
+    <a href="{{ url_for('teacher.grade_select') }}" class="btn btn-secondary">← Back</a>
+    {% endif %}
+</form>
+{% endblock %}

@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% block title %}My Attendance{% endblock %}
+{% block content %}
+<h2 class="mb-4">My Attendance</h2>
+
+<!-- 统计卡片 -->
+<div class="row mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card text-center shadow-sm">
+            <div class="card-body">
+                <div class="display-6 fw-bold text-primary">{{ att_rate }}%</div>
+                <div class="text-muted small">Attendance Rate</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card text-center shadow-sm">
+            <div class="card-body">
+                <div class="display-6 fw-bold text-success">{{ present }}</div>
+                <div class="text-muted small">Present / Late</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card text-center shadow-sm">
+            <div class="card-body">
+                <div class="display-6 fw-bold text-warning">{{ late }}</div>
+                <div class="text-muted small">Late</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card text-center shadow-sm">
+            <div class="card-body">
+                <div class="display-6 fw-bold text-danger">{{ absent }}</div>
+                <div class="text-muted small">Absent</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 记录列表 -->
+{% if records %}
+<div class="table-responsive">
+    <table class="table table-bordered table-hover align-middle">
+        <thead class="table-dark">
+            <tr>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Course</th>
+                <th class="text-center">Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in records %}
+            <tr>
+                <td>{{ r.date }}</td>
+                <td>{{ r.lesson_time.strftime('%H:%M') if r.lesson_time else '-' }}</td>
+                <td>{{ r.course.course_name }}</td>
+                <td class="text-center">
+                    {% if r.status == 'present' %}
+                        <span class="badge bg-success">Present</span>
+                    {% elif r.status == 'absent' %}
+                        <span class="badge bg-danger">Absent</span>
+                    {% else %}
+                        <span class="badge bg-warning text-dark">Late</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<p class="text-muted">No attendance records yet.</p>
+{% endif %}
+
+<a href="{{ url_for('student.dashboard') }}" class="btn btn-secondary mt-2">Back</a>
+{% endblock %}

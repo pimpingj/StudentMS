@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% block title %}Class Charts{% endblock %}
+{% block content %}
+<h2 class="mb-4">Class Performance Charts</h2>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-header fw-bold">Average Grade per Course</div>
+            <div class="card-body">
+                <canvas id="chartGrades" height="220"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-header fw-bold">Average Attendance Rate per Course (%)</div>
+            <div class="card-body">
+                <canvas id="chartAttendance" height="220"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<a href="{{ url_for('teacher.dashboard') }}" class="btn btn-secondary">Back</a>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+const labels     = {{ course_labels | safe }};
+const avgGrades  = {{ avg_grades    | safe }};
+const avgAtt     = {{ avg_attendance | safe }};
+
+new Chart(document.getElementById('chartGrades'), {
+    type: 'bar',
+    data: {
+        labels,
+        datasets: [{
+            label: 'Average Score',
+            data: avgGrades,
+            backgroundColor: 'rgba(54, 162, 235, 0.75)',
+            borderColor:     'rgba(54, 162, 235, 1)',
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+            y: { beginAtZero: true, max: 100,
+                 title: { display: true, text: 'Score' } }
+        }
+    }
+});
+
+new Chart(document.getElementById('chartAttendance'), {
+    type: 'bar',
+    data: {
+        labels,
+        datasets: [{
+            label: 'Attendance Rate %',
+            data: avgAtt,
+            backgroundColor: 'rgba(40, 167, 69, 0.75)',
+            borderColor:     'rgba(40, 167, 69, 1)',
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+            y: { beginAtZero: true, max: 100,
+                 title: { display: true, text: 'Rate (%)' } }
+        }
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block title %}Risk Alerts{% endblock %}
+{% block content %}
+<h2 class="mb-4">Risk Alerts</h2>
+
+{% if at_risk %}
+<div class="alert alert-warning d-flex align-items-center mb-4">
+    <i class="bi bi-exclamation-triangle-fill fs-4 me-2"></i>
+    <span><strong>{{ at_risk | length }} student{{ 's' if at_risk | length != 1 }}</strong>
+    {{ 'are' if at_risk | length != 1 else 'is' }} currently at risk based on ML predictions.</span>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-bordered table-hover align-middle">
+        <thead class="table-dark">
+            <tr>
+                <th>Student</th>
+                <th>Course</th>
+                <th class="text-center">Predicted Next Exam Score</th>
+                <th class="text-center">Risk Level</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in at_risk %}
+            <tr>
+                <td>{{ p.student.name }}</td>
+                <td>{{ p.course.course_name }}</td>
+                <td class="text-center fw-bold">{{ p.predicted_score | round(1) }}</td>
+                <td class="text-center">
+                    {% if p.predicted_score < 50 %}
+                    <span class="badge bg-danger">High Risk</span>
+                    {% else %}
+                    <span class="badge bg-warning text-dark">At Risk</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% else %}
+<div class="alert alert-success d-flex align-items-center">
+    <i class="bi bi-check-circle-fill fs-4 me-2"></i>
+    <span>No students currently at risk. Run ML Predictions first if the table is empty.</span>
+</div>
+{% endif %}
+
+<a href="{{ url_for('teacher.dashboard') }}" class="btn btn-secondary mt-2">Back</a>
+{% endblock %}

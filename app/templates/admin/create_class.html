@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}Create Class{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <div class="card shadow">
+            <div class="card-body p-4">
+                <h4 class="mb-4">Create New Class</h4>
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Class Name</label>
+                        <input type="text" name="class_name" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Academic Year</label>
+                        <input type="text" name="academic_year" class="form-control" placeholder="e.g. 2024-2025">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Teacher (optional)</label>
+                        <select name="teacher_id" class="form-select">
+                            <option value="">-- None --</option>
+                            {% for t in teachers %}
+                            <option value="{{ t.teacher_id }}">{{ t.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('admin.class_list') }}" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">Create</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

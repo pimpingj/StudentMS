@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block title %}Teacher Dashboard{% endblock %}
+{% block content %}
+<h2 class="mb-4">Teacher Dashboard</h2>
+<p>Welcome, {{ current_user.username }}.</p>
+
+<!-- Risk Alert Banner -->
+{% if at_risk_count > 0 %}
+<div class="alert alert-warning d-flex justify-content-between align-items-center mb-4">
+    <span>
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <strong>{{ at_risk_count }} student{{ 's' if at_risk_count != 1 }}</strong>
+        {{ 'are' if at_risk_count != 1 else 'is' }} currently at risk.
+    </span>
+    <a href="{{ url_for('teacher.risk_alerts') }}" class="btn btn-warning btn-sm">View Details</a>
+</div>
+{% endif %}
+
+<!-- Navigation buttons -->
+<div class="d-flex flex-wrap gap-2">
+    <a href="{{ url_for('teacher.create_exam') }}"        class="btn btn-primary">Create Exam</a>
+    <a href="{{ url_for('teacher.exam_list') }}"          class="btn btn-dark">My Exams</a>
+    <a href="{{ url_for('teacher.grade_list') }}"         class="btn btn-dark">Grade Management</a>
+    <a href="{{ url_for('teacher.attendance_list') }}"    class="btn btn-dark">Attendance</a>
+    <a href="{{ url_for('teacher.prediction_dashboard') }}" class="btn btn-dark">ML Predictions</a>
+    <a href="{{ url_for('teacher.risk_alerts') }}"        class="btn btn-outline-warning">Risk Alerts</a>
+    <a href="{{ url_for('teacher.teacher_charts') }}"     class="btn btn-outline-info">View Charts</a>
+    <a href="{{ url_for('teacher.stats_dashboard') }}"   class="btn btn-outline-info">Statistics Dashboard</a>
+</div>
+{% endblock %}

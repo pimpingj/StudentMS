@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}Login - StudentMS{% endblock %}
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-4">
+        <div class="card shadow">
+            <div class="card-body p-4">
+                <h4 class="card-title text-center mb-4">
+                    <i class="bi bi-mortarboard-fill"></i> StudentMS
+                </h4>
+
+                <!-- 角色选择 Tab -->
+                <ul class="nav nav-pills nav-justified mb-4" id="roleTabs">
+                    <li class="nav-item">
+                        <button class="nav-link active" data-role="Admin" data-icon="bi-shield-lock">
+                            <i class="bi bi-shield-lock"></i> Admin
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-role="Teacher" data-icon="bi-person-workspace">
+                            <i class="bi bi-person-workspace"></i> Teacher
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-role="Student" data-icon="bi-backpack">
+                            <i class="bi bi-backpack"></i> Student
+                        </button>
+                    </li>
+                </ul>
+
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Username</label>
+                        <input type="text" name="username" class="form-control" required autofocus>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Password</label>
+                        <input type="password" name="password" class="form-control" required>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary" id="loginBtn">
+                            Login as Admin
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const tabs    = document.querySelectorAll('#roleTabs .nav-link');
+    const loginBtn = document.getElementById('loginBtn');
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            tabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            loginBtn.textContent = 'Login as ' + tab.dataset.role;
+        });
+    });
+</script>
+{% endblock %}

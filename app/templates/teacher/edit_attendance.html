@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block title %}Edit Attendance{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-body p-4">
+                <h4 class="mb-4">Edit Attendance</h4>
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Student</label>
+                        <select name="student_id" class="form-select" required>
+                            {% for s in students %}
+                            <option value="{{ s.student_id }}"
+                                {{ 'selected' if s.student_id == record.student_id }}>
+                                {{ s.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Course</label>
+                        <select name="course_id" class="form-select" required>
+                            {% for c in courses %}
+                            <option value="{{ c.course_id }}"
+                                {{ 'selected' if c.course_id == record.course_id }}>
+                                {{ c.course_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Date</label>
+                        <input type="date" name="att_date" class="form-control"
+                               value="{{ record.date }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Lesson Time</label>
+                        <input type="time" name="lesson_time" class="form-control"
+                               value="{{ record.lesson_time.strftime('%H:%M') if record.lesson_time else '' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Status</label>
+                        <select name="status" class="form-select" required>
+                            {% for s in ['present', 'absent', 'late'] %}
+                            <option value="{{ s }}"
+                                {{ 'selected' if record.status == s }}>
+                                {{ s | capitalize }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('teacher.attendance_list') }}" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

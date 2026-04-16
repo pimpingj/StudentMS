@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% block title %}My Progress{% endblock %}
+{% block content %}
+<h2 class="mb-4">My Progress</h2>
+
+<!-- Attendance summary cards -->
+<div class="row mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card text-center shadow-sm">
+            <div class="card-body">
+                <div class="display-6 fw-bold text-primary">{{ att_rate }}%</div>
+                <div class="text-muted small">Attendance Rate</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card text-center shadow-sm">
+            <div class="card-body">
+                <div class="display-6 fw-bold text-success">{{ present }}</div>
+                <div class="text-muted small">Present</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card text-center shadow-sm">
+            <div class="card-body">
+                <div class="display-6 fw-bold text-warning">{{ late }}</div>
+                <div class="text-muted small">Late</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card text-center shadow-sm">
+            <div class="card-body">
+                <div class="display-6 fw-bold text-danger">{{ absent }}</div>
+                <div class="text-muted small">Absent</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Grade trend chart -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header fw-bold">Grade Trend by Course</div>
+    <div class="card-body">
+        <canvas id="chartTrend" height="120"></canvas>
+    </div>
+</div>
+
+<a href="{{ url_for('student.dashboard') }}" class="btn btn-secondary">Back</a>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+const trends = {{ trends | safe }};
+
+const COLORS = [
+    ['rgba(54,162,235,0.8)',  'rgba(54,162,235,1)'],
+    ['rgba(255,99,132,0.8)',  'rgba(255,99,132,1)'],
+    ['rgba(75,192,192,0.8)',  'rgba(75,192,192,1)'],
+    ['rgba(255,159,64,0.8)',  'rgba(255,159,64,1)'],
+    ['rgba(153,102,255,0.8)', 'rgba(153,102,255,1)'],
+];
+
+// Build a unified label axis (union of all exam labels)
+const allLabels = [...new Set(trends.flatMap(t => t.labels))];
+
+const datasets = trends.map((t, i) => {
+    const [bg, border] = COLORS[i % COLORS.length];
+    // Map scores to the unified label axis (null if no data at that exam)
+    const data = allLabels.map(lbl => {
+        const idx = t.labels.indexOf(lbl);
+        return idx !== -1 ? t.scores[idx] : null;
+    });
+    return {
+        label: t.course,
+        data,
+        borderColor: border,
+        backgroundColor: bg,
+        tension: 0.3,
+        spanGaps: true,
+        pointRadius: 5,
+        fill: false,
+    };
+});
+
+new Chart(document.getElementById('chartTrend'), {
+    type: 'line',
+    data: { labels: allLabels, datasets },
+    options: {
+        responsive: true,
+        plugins: { legend: { position: 'bottom' } },
+        scales: {
+            y: { min: 0, max: 100,
+                 title: { display: true, text: 'Score' } },
+            x: { title: { display: true, text: 'Exam' } }
+        }
+    }
+});
+</script>
+{% endblock %}

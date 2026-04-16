@@ -1,0 +1,194 @@
+{% extends 'base.html' %}
+{% block title %}Statistics Dashboard{% endblock %}
+{% block content %}
+
+<h2 class="mb-1">Statistics Dashboard</h2>
+<p class="text-muted mb-4">Overall performance summary across your courses and classes.</p>
+
+<!-- Top summary cards -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card text-center shadow-sm h-100 border-0 bg-primary text-white">
+            <div class="card-body py-3">
+                <div class="fs-2 fw-bold">{{ course_summaries | length }}</div>
+                <div class="small">Courses with Data</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card text-center shadow-sm h-100 border-0 bg-success text-white">
+            <div class="card-body py-3">
+                {% if course_summaries %}
+                    {% set overall_avg = (course_summaries | map(attribute='avg') | list | sum / course_summaries | length) | round(1) %}
+                {% else %}
+                    {% set overall_avg = 0 %}
+                {% endif %}
+                <div class="fs-2 fw-bold">{{ overall_avg }}</div>
+                <div class="small">Overall Avg Score</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card text-center shadow-sm h-100 border-0 bg-danger text-white">
+            <div class="card-body py-3">
+                <div class="fs-2 fw-bold">{{ at_risk_count }}</div>
+                <div class="small">At-Risk Students</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card text-center shadow-sm h-100 border-0 bg-dark text-white">
+            <div class="card-body py-3">
+                {% set total_students = class_summaries | map(attribute='student_count') | list | sum %}
+                <div class="fs-2 fw-bold">{{ total_students }}</div>
+                <div class="small">Total Students</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Course performance table -->
+{% if course_summaries %}
+<div class="card shadow-sm mb-4">
+    <div class="card-header fw-bold bg-dark text-white">Course Performance Summary</div>
+    <div class="table-responsive">
+        <table class="table table-bordered align-middle mb-0">
+            <thead class="table-secondary">
+                <tr>
+                    <th>Course</th>
+                    <th class="text-center">Grades</th>
+                    <th class="text-center">Average</th>
+                    <th class="text-center">Highest</th>
+                    <th class="text-center">Lowest</th>
+                    <th class="text-center">Below 60</th>
+                    <th class="text-center">Fail %</th>
+                    <th class="text-center">Attendance</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in course_summaries %}
+                <tr>
+                    <td class="fw-semibold">{{ s.course.course_name }}</td>
+                    <td class="text-center">{{ s.n }}</td>
+                    <td class="text-center">
+                        <span class="fw-semibold {% if s.avg >= 75 %}text-success{% elif s.avg >= 60 %}text-warning{% else %}text-danger{% endif %}">
+                            {{ s.avg }}
+                        </span>
+                    </td>
+                    <td class="text-center text-info fw-semibold">{{ s.high }}</td>
+                    <td class="text-center text-danger">{{ s.low }}</td>
+                    <td class="text-center">{{ s.fail_count }}</td>
+                    <td class="text-center">
+                        <span class="badge {% if s.fail_pct > 30 %}bg-danger{% elif s.fail_pct > 15 %}bg-warning text-dark{% else %}bg-success{% endif %}">
+                            {{ s.fail_pct }}%
+                        </span>
+                    </td>
+                    <td class="text-center">
+                        <span class="badge {% if s.att_rate >= 75 %}bg-success{% elif s.att_rate >= 60 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                            {{ s.att_rate }}%
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Grade distribution chart -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header fw-bold bg-dark text-white">Grade Distribution (A/B/C/D/F)</div>
+    <div class="card-body">
+        <canvas id="chartDist" style="max-height:320px"></canvas>
+    </div>
+</div>
+
+{% else %}
+<div class="alert alert-info">No grade data available yet. Enter grades to see statistics.</div>
+{% endif %}
+
+<!-- Class attendance -->
+{% if class_summaries %}
+<div class="card shadow-sm mb-4">
+    <div class="card-header fw-bold bg-dark text-white">Attendance Rate by Class</div>
+    <div class="table-responsive">
+        <table class="table table-bordered align-middle mb-0">
+            <thead class="table-secondary">
+                <tr>
+                    <th>Class</th>
+                    <th class="text-center">Students</th>
+                    <th class="text-center">Attendance Rate</th>
+                    <th>Visual</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cs in class_summaries %}
+                <tr>
+                    <td class="fw-semibold">{{ cs.cls.class_name }}</td>
+                    <td class="text-center">{{ cs.student_count }}</td>
+                    <td class="text-center">
+                        <span class="badge {% if cs.att_rate >= 75 %}bg-success{% elif cs.att_rate >= 60 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                            {{ cs.att_rate }}%
+                        </span>
+                    </td>
+                    <td style="min-width:160px">
+                        <div class="progress" style="height:18px">
+                            <div class="progress-bar
+                                {% if cs.att_rate >= 75 %}bg-success
+                                {% elif cs.att_rate >= 60 %}bg-warning
+                                {% else %}bg-danger{% endif %}"
+                                 style="width:{{ cs.att_rate }}%">
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<div class="d-flex gap-2">
+    <a href="{{ url_for('teacher.dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
+    <a href="{{ url_for('teacher.risk_alerts') }}" class="btn btn-outline-warning">View Risk Alerts</a>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+{% if course_summaries %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+const labels = {{ course_summaries | map(attribute='course') | map(attribute='course_name') | list | tojson }};
+const distA  = {{ course_summaries | map(attribute='dist') | map(attribute='A') | list | tojson }};
+const distB  = {{ course_summaries | map(attribute='dist') | map(attribute='B') | list | tojson }};
+const distC  = {{ course_summaries | map(attribute='dist') | map(attribute='C') | list | tojson }};
+const distD  = {{ course_summaries | map(attribute='dist') | map(attribute='D') | list | tojson }};
+const distF  = {{ course_summaries | map(attribute='dist') | map(attribute='F') | list | tojson }};
+
+new Chart(document.getElementById('chartDist'), {
+    type: 'bar',
+    data: {
+        labels,
+        datasets: [
+            { label: 'A (90–100)', data: distA, backgroundColor: 'rgba(40,167,69,0.8)' },
+            { label: 'B (80–89)',  data: distB, backgroundColor: 'rgba(23,162,184,0.8)' },
+            { label: 'C (70–79)',  data: distC, backgroundColor: 'rgba(255,193,7,0.8)' },
+            { label: 'D (60–69)',  data: distD, backgroundColor: 'rgba(253,126,20,0.8)' },
+            { label: 'F (< 60)',   data: distF, backgroundColor: 'rgba(220,53,69,0.8)' },
+        ]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { position: 'bottom' } },
+        scales: {
+            x: { stacked: true },
+            y: { stacked: true, beginAtZero: true,
+                 title: { display: true, text: 'Number of grades' } }
+        }
+    }
+});
+</script>
+{% endif %}
+{% endblock %}

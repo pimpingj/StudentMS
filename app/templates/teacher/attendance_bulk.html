@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% block title %}Attendance — {{ cls.class_name }}{% endblock %}
+{% block content %}
+<h4 class="mb-4">Take Attendance — {{ cls.class_name }}</h4>
+
+<form method="POST"
+      action="{{ url_for('teacher.attendance_bulk', class_id=class_id) }}">
+
+    <!-- 课程信息 -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Course</label>
+                    <select name="course_id" class="form-select" required>
+                        <option value="">-- Select Course --</option>
+                        {% for c in courses %}
+                        <option value="{{ c.course_id }}">{{ c.course_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Date</label>
+                    <input type="date" name="att_date" class="form-control"
+                           value="{{ today }}" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Lesson Time</label>
+                    <input type="time" name="lesson_time" class="form-control">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 学生名单 -->
+    {% if students %}
+    <div class="table-responsive">
+        <table class="table table-bordered align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>#</th>
+                    <th>Student</th>
+                    <th class="text-center text-success">Present</th>
+                    <th class="text-center text-danger">Absent</th>
+                    <th class="text-center text-warning">Late</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in students %}
+                <tr>
+                    <td class="text-muted">{{ loop.index }}</td>
+                    <td>{{ s.name }}</td>
+                    {% for status in ['present', 'absent', 'late'] %}
+                    <td class="text-center">
+                        <input type="radio" name="status_{{ s.student_id }}"
+                               value="{{ status }}" class="form-check-input"
+                               {{ 'checked' if loop.first }}>
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="d-flex justify-content-between mt-2">
+        <a href="{{ url_for('teacher.attendance_select') }}" class="btn btn-secondary">← Back</a>
+        <button type="submit" class="btn btn-primary">Save Attendance</button>
+    </div>
+    {% else %}
+    <div class="alert alert-warning">No students found in this class.</div>
+    <a href="{{ url_for('teacher.attendance_select') }}" class="btn btn-secondary">← Back</a>
+    {% endif %}
+</form>
+{% endblock %}

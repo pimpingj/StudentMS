@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block content %}
+<h2 class="mb-4">Admin Dashboard</h2>
+<div class="row">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary mb-3">
+            <div class="card-body">
+                <h5 class="card-title">Students</h5>
+                <p class="card-text display-6">{{ total_students }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success mb-3">
+            <div class="card-body">
+                <h5 class="card-title">Teachers</h5>
+                <p class="card-text display-6">{{ total_teachers }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+<a href="{{ url_for('admin.user_list') }}" class="btn btn-dark">Manage Users</a>
+<a href="{{ url_for('admin.class_list') }}" class="btn btn-dark">Class Management</a>
+<a href="{{ url_for('admin.course_list') }}" class="btn btn-dark">Course Management</a>
+{% endblock %}

@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% block title %}Edit User{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <div class="card shadow">
+            <div class="card-body p-4">
+                <h4 class="mb-4">Edit User — {{ user.username }}</h4>
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Username</label>
+                        <input type="text" name="username" class="form-control"
+                               value="{{ user.username }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">New Password <small class="text-muted">(leave blank to keep)</small></label>
+                        <input type="password" name="password" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Role</label>
+                        <input type="text" class="form-control" value="{{ user.role }}" disabled>
+                    </div>
+
+                    {% if user.role == 'student' and user.student_profile %}
+                    {% set p = user.student_profile %}
+                    <hr><h6 class="text-muted">Student Profile</h6>
+                    <div class="mb-3">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" name="name" class="form-control" value="{{ p.name }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Gender</label>
+                        <select name="gender" class="form-select">
+                            {% for g in ['Male', 'Female', 'Other'] %}
+                            <option value="{{ g }}" {{ 'selected' if p.gender == g }}>{{ g }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Date of Birth</label>
+                        <input type="date" name="date_of_birth" class="form-control"
+                               value="{{ p.date_of_birth or '' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Class</label>
+                        <select name="class_id" class="form-select">
+                            <option value="">-- No Class --</option>
+                            {% for c in classes %}
+                            <option value="{{ c.class_id }}"
+                                {{ 'selected' if p.class_id == c.class_id }}>
+                                {{ c.class_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endif %}
+
+                    {% if user.role == 'teacher' and user.teacher_profile %}
+                    {% set p = user.teacher_profile %}
+                    <hr><h6 class="text-muted">Teacher Profile</h6>
+                    <div class="mb-3">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" name="teacher_name" class="form-control" value="{{ p.name }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Department</label>
+                        <input type="text" name="department" class="form-control"
+                               value="{{ p.department or '' }}">
+                    </div>
+                    {% endif %}
+
+                    <div class="d-flex justify-content-between mt-3">
+                        <a href="{{ url_for('admin.user_list') }}" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
