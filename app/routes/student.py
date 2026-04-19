@@ -1,12 +1,23 @@
 import json
 from collections import defaultdict
+from functools import wraps
 from datetime import date
-from flask import Blueprint, render_template, abort, request, redirect, url_for
+from flask import Blueprint, render_template, abort, request, redirect, url_for, flash
 from flask_login import login_required, current_user
 from app import db
 from app.models import Student, Grade, Exam, Attendance, Notification, Course
 
 student_bp = Blueprint('student', __name__)
+
+
+def student_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if current_user.role != 'student':
+            flash('Access denied.', 'danger')
+            return redirect(url_for('auth.login'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 
 def get_student_or_403():
@@ -48,6 +59,7 @@ def _build_timetable_rows(student):
 
 @student_bp.route('/student/dashboard')
 @login_required
+@student_required
 def dashboard():
     student = Student.query.filter_by(user_id=current_user.user_id).first()
     upcoming = []
@@ -58,6 +70,7 @@ def dashboard():
 
 @student_bp.route('/student/timetable')
 @login_required
+@student_required
 def timetable():
     student = get_student_or_403()
     rows    = _build_timetable_rows(student)
@@ -67,6 +80,7 @@ def timetable():
 # ── 查看自己成绩 ───────────────────────────────────────
 @student_bp.route('/student/grades')
 @login_required
+@student_required
 def grade_list():
     from app.stats import exam_course_stats
     student = get_student_or_403()
@@ -98,6 +112,7 @@ def grade_list():
 # ── 查看自己出勤 ───────────────────────────────────────
 @student_bp.route('/student/attendance')
 @login_required
+@student_required
 def attendance():
     student = get_student_or_403()
     records = (Attendance.query
@@ -117,6 +132,7 @@ def attendance():
 # ── 个人进度图表 ───────────────────────────────────────
 @student_bp.route('/student/charts')
 @login_required
+@student_required
 def student_charts():
     student = get_student_or_403()
 
@@ -161,6 +177,7 @@ def student_charts():
 # ── Notifications ──────────────────────────────────────
 @student_bp.route('/student/notifications/<int:notif_id>/read', methods=['POST'])
 @login_required
+@student_required
 def mark_notification_read(notif_id):
     notif = Notification.query.get_or_404(notif_id)
     if notif.user_id != current_user.user_id:
@@ -172,6 +189,7 @@ def mark_notification_read(notif_id):
 
 @student_bp.route('/student/notifications/mark-all-read', methods=['POST'])
 @login_required
+@student_required
 def mark_all_notifications_read():
     Notification.query.filter_by(
         user_id=current_user.user_id, is_read=False

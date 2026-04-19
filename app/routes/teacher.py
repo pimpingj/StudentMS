@@ -1,5 +1,6 @@
 import json
 from collections import defaultdict
+from functools import wraps
 from flask import Blueprint, render_template, redirect, url_for, flash, request, abort
 from flask_login import login_required, current_user
 from datetime import date, datetime as dt
@@ -7,6 +8,16 @@ from app import db
 from app.models import Teacher, Course, Grade, Student, Attendance, Class, Exam, Prediction
 
 teacher_bp = Blueprint('teacher', __name__)
+
+
+def teacher_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if current_user.role != 'teacher':
+            flash('Access denied.', 'danger')
+            return redirect(url_for('auth.login'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 
 def get_teacher_or_403():
@@ -19,6 +30,7 @@ def get_teacher_or_403():
 # ── Dashboard ─────────────────────────────────────────
 @teacher_bp.route('/teacher/dashboard')
 @login_required
+@teacher_required
 def dashboard():
     teacher = Teacher.query.filter_by(user_id=current_user.user_id).first()
     at_risk_count = 0
@@ -39,6 +51,7 @@ def dashboard():
 
 @teacher_bp.route('/teacher/exams')
 @login_required
+@teacher_required
 def exam_list():
     teacher = get_teacher_or_403()
     exams   = teacher.exams.order_by(Exam.exam_date.desc()).all()
@@ -47,6 +60,7 @@ def exam_list():
 
 @teacher_bp.route('/teacher/exams/create', methods=['GET', 'POST'])
 @login_required
+@teacher_required
 def create_exam():
     teacher = get_teacher_or_403()
     classes = teacher.classes.all()
@@ -76,6 +90,7 @@ def create_exam():
 
 @teacher_bp.route('/teacher/exams/delete/<int:exam_id>', methods=['POST'])
 @login_required
+@teacher_required
 def delete_exam(exam_id):
     teacher = get_teacher_or_403()
     exam    = Exam.query.get_or_404(exam_id)
@@ -93,6 +108,7 @@ def delete_exam(exam_id):
 
 @teacher_bp.route('/teacher/grades')
 @login_required
+@teacher_required
 def grade_list():
     teacher  = get_teacher_or_403()
     exam_ids = [e.exam_id for e in teacher.exams]
@@ -105,6 +121,7 @@ def grade_list():
 
 @teacher_bp.route('/teacher/grades/select', methods=['GET', 'POST'])
 @login_required
+@teacher_required
 def grade_select():
     """Step 1：选考试 + 课程"""
     teacher = get_teacher_or_403()
@@ -130,6 +147,7 @@ def grade_select():
 
 @teacher_bp.route('/teacher/grades/bulk', methods=['GET', 'POST'])
 @login_required
+@teacher_required
 def grade_bulk():
     """Step 2：为考试关联班级的全体学生录入分数"""
     teacher   = get_teacher_or_403()
@@ -183,6 +201,7 @@ def grade_bulk():
 
 @teacher_bp.route('/teacher/grades/stats')
 @login_required
+@teacher_required
 def grade_stats():
     """Exam+course statistics shown automatically after grades are saved."""
     from app.stats import exam_course_stats
@@ -205,6 +224,7 @@ def grade_stats():
 
 @teacher_bp.route('/teacher/stats')
 @login_required
+@teacher_required
 def stats_dashboard():
     """Overall statistics dashboard for the teacher."""
     from app.stats import course_overall_stats, class_attendance_rate
@@ -241,6 +261,7 @@ def stats_dashboard():
 
 @teacher_bp.route('/teacher/grades/delete/<int:grade_id>', methods=['POST'])
 @login_required
+@teacher_required
 def delete_grade(grade_id):
     teacher  = get_teacher_or_403()
     grade    = Grade.query.get_or_404(grade_id)
@@ -259,6 +280,7 @@ def delete_grade(grade_id):
 
 @teacher_bp.route('/teacher/attendance')
 @login_required
+@teacher_required
 def attendance_list():
     teacher    = get_teacher_or_403()
     course_ids = [c.course_id for c in teacher.courses]
@@ -271,6 +293,7 @@ def attendance_list():
 
 @teacher_bp.route('/teacher/attendance/select', methods=['GET', 'POST'])
 @login_required
+@teacher_required
 def attendance_select():
     teacher = get_teacher_or_403()
     classes = teacher.classes.all()
@@ -282,6 +305,7 @@ def attendance_select():
 
 @teacher_bp.route('/teacher/attendance/bulk', methods=['GET', 'POST'])
 @login_required
+@teacher_required
 def attendance_bulk():
     teacher  = get_teacher_or_403()
     class_id = request.args.get('class_id', type=int)
@@ -329,6 +353,7 @@ def attendance_bulk():
 
 @teacher_bp.route('/teacher/attendance/edit/<int:record_id>', methods=['GET', 'POST'])
 @login_required
+@teacher_required
 def edit_attendance(record_id):
     teacher    = get_teacher_or_403()
     record     = Attendance.query.get_or_404(record_id)
@@ -355,6 +380,7 @@ def edit_attendance(record_id):
 
 @teacher_bp.route('/teacher/attendance/delete/<int:record_id>', methods=['POST'])
 @login_required
+@teacher_required
 def delete_attendance(record_id):
     teacher    = get_teacher_or_403()
     record     = Attendance.query.get_or_404(record_id)
@@ -373,6 +399,7 @@ def delete_attendance(record_id):
 
 @teacher_bp.route('/teacher/predictions', methods=['GET', 'POST'])
 @login_required
+@teacher_required
 def prediction_dashboard():
     from app.ml.predictor import train_and_evaluate, predict_students
 
@@ -440,6 +467,7 @@ def prediction_dashboard():
 
 @teacher_bp.route('/teacher/risk-alerts')
 @login_required
+@teacher_required
 def risk_alerts():
     teacher    = get_teacher_or_403()
     course_ids = [c.course_id for c in teacher.courses]
@@ -461,6 +489,7 @@ def risk_alerts():
 
 @teacher_bp.route('/teacher/charts')
 @login_required
+@teacher_required
 def teacher_charts():
     teacher = get_teacher_or_403()
     courses = teacher.courses.all()
