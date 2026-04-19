@@ -2,7 +2,9 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_required, current_user
 from functools import wraps
 from app import db
-from app.models import User, Class, Course, Teacher, Student
+from app.models import (User, Class, Course, Teacher, Student,
+                        Grade, Attendance, Prediction, Notification,
+                        Exam, exam_classes)
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -129,6 +131,35 @@ def delete_user(user_id):
     if user.user_id == current_user.user_id:
         flash('Cannot delete your own account.', 'danger')
         return redirect(url_for('admin.user_list'))
+
+    # Delete in FK-safe order: children before parents.
+    # Notifications reference users directly.
+    Notification.query.filter_by(user_id=user.user_id).delete()
+
+    if user.role == 'teacher' and user.teacher_profile:
+        teacher = user.teacher_profile
+        # Nullify FK on classes and courses (keep them, just unassign the teacher).
+        Class.query.filter_by(teacher_id=teacher.teacher_id).update({'teacher_id': None})
+        Course.query.filter_by(teacher_id=teacher.teacher_id).update({'teacher_id': None})
+        # Exams require NOT NULL teacher_id — must be deleted along with their grades.
+        for exam in teacher.exams.all():
+            Grade.query.filter_by(exam_id=exam.exam_id).delete()
+            db.session.execute(
+                exam_classes.delete().where(exam_classes.c.exam_id == exam.exam_id)
+            )
+            db.session.delete(exam)
+        db.session.flush()
+        db.session.delete(teacher)
+        db.session.flush()
+
+    elif user.role == 'student' and user.student_profile:
+        student = user.student_profile
+        Prediction.query.filter_by(student_id=student.student_id).delete()
+        Attendance.query.filter_by(student_id=student.student_id).delete()
+        Grade.query.filter_by(student_id=student.student_id).delete()
+        db.session.delete(student)
+        db.session.flush()
+
     db.session.delete(user)
     db.session.commit()
     flash(f'User "{user.username}" deleted.', 'success')
