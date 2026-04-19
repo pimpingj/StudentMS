@@ -28,6 +28,11 @@
                 <td>{{ g.exam.exam_date }}</td>
                 <td>{{ g.score }}</td>
                 <td>
+                    <a href="{{ url_for('teacher.grade_bulk',
+                                       exam_id=g.exam_id,
+                                       course_id=g.course_id,
+                                       class_ids=g.exam.classes|map(attribute='class_id')|join(',')) }}"
+                       class="btn btn-sm btn-outline-primary me-1">Edit</a>
                     <form method="POST" action="{{ url_for('teacher.delete_grade', grade_id=g.grade_id) }}"
                           class="d-inline" onsubmit="return confirm('Delete this grade?')">
                         <button class="btn btn-sm btn-outline-danger">Delete</button>
