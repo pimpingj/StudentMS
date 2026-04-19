@@ -132,34 +132,48 @@ def delete_user(user_id):
         flash('Cannot delete your own account.', 'danger')
         return redirect(url_for('admin.user_list'))
 
-    # Delete in FK-safe order: children before parents.
-    # Notifications reference users directly.
-    Notification.query.filter_by(user_id=user.user_id).delete()
+    # Step 1 — notifications (FK → users)
+    Notification.query.filter_by(user_id=user.user_id).delete(synchronize_session=False)
+    db.session.flush()
 
     if user.role == 'teacher' and user.teacher_profile:
         teacher = user.teacher_profile
-        # Nullify FK on classes and courses (keep them, just unassign the teacher).
-        Class.query.filter_by(teacher_id=teacher.teacher_id).update({'teacher_id': None})
-        Course.query.filter_by(teacher_id=teacher.teacher_id).update({'teacher_id': None})
-        # Exams require NOT NULL teacher_id — must be deleted along with their grades.
-        for exam in teacher.exams.all():
-            Grade.query.filter_by(exam_id=exam.exam_id).delete()
-            db.session.execute(
-                exam_classes.delete().where(exam_classes.c.exam_id == exam.exam_id)
-            )
-            db.session.delete(exam)
+
+        # Step 2 — unassign teacher from classes / courses (nullable FKs)
+        Class.query.filter_by(teacher_id=teacher.teacher_id).update(
+            {'teacher_id': None}, synchronize_session=False)
+        Course.query.filter_by(teacher_id=teacher.teacher_id).update(
+            {'teacher_id': None}, synchronize_session=False)
         db.session.flush()
+
+        # Step 3 — delete each exam: grades first, then clear M2M, then exam
+        teacher_exams = Exam.query.filter_by(teacher_id=teacher.teacher_id).all()
+        for exam in teacher_exams:
+            Grade.query.filter_by(exam_id=exam.exam_id).delete(synchronize_session=False)
+            db.session.flush()
+            exam.classes = []          # let SQLAlchemy remove exam_classes rows
+            db.session.flush()
+            db.session.delete(exam)
+            db.session.flush()
+
+        # Step 4 — delete teacher profile
         db.session.delete(teacher)
         db.session.flush()
 
     elif user.role == 'student' and user.student_profile:
         student = user.student_profile
-        Prediction.query.filter_by(student_id=student.student_id).delete()
-        Attendance.query.filter_by(student_id=student.student_id).delete()
-        Grade.query.filter_by(student_id=student.student_id).delete()
+
+        # Step 2 — delete all child records
+        Prediction.query.filter_by(student_id=student.student_id).delete(synchronize_session=False)
+        Attendance.query.filter_by(student_id=student.student_id).delete(synchronize_session=False)
+        Grade.query.filter_by(student_id=student.student_id).delete(synchronize_session=False)
+        db.session.flush()
+
+        # Step 3 — delete student profile
         db.session.delete(student)
         db.session.flush()
 
+    # Final step — delete the user row
     db.session.delete(user)
     db.session.commit()
     flash(f'User "{user.username}" deleted.', 'success')
