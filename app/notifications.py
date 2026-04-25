@@ -28,8 +28,8 @@ def check_attendance_alert(student):
 
 
 def check_prediction_alert(student, course_name, predicted_score):
-    """Create a notification if a predicted score falls below 60."""
-    if predicted_score < 60:
+    """Create a notification if a predicted score falls below 65."""
+    if predicted_score < 65:
         _notify(
             student.user_id,
             f"Your predicted grade for {course_name} is {predicted_score:.1f}, "

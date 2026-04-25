@@ -397,7 +397,7 @@ def delete_attendance(record_id):
 #  ML 预测
 # ══════════════════════════════════════════════════════
 
-@teacher_bp.route('/teacher/predictions', methods=['GET', 'POST'])
+@teacher_bp.route('/teacher/predictions', methods=['GET'])
 @login_required
 @teacher_required
 def prediction_dashboard():
@@ -407,7 +407,6 @@ def prediction_dashboard():
     courses   = teacher.courses.all()
     course_id = request.args.get('course_id', type=int)
 
-    # 训练模型 + 取评估指标（每次请求都用模拟数据训练，速度很快）
     trained = train_and_evaluate()
 
     metrics = {
@@ -429,29 +428,30 @@ def prediction_dashboard():
         students  = Student.query.filter(Student.class_id.in_(class_ids)).all() if class_ids else Student.query.all()
         student_preds = predict_students(students, course_id, trained)
 
-    # 保存预测结果到 DB
-    if request.method == 'POST' and course_id and student_preds:
-        Prediction.query.filter_by(course_id=course_id).delete()
-        for row in student_preds:
-            s = row['student']
-            for target in ('next_exam', 'final_grade'):
-                for model_name in ('linear_regression', 'decision_tree'):
-                    db.session.add(Prediction(
-                        student_id=s.student_id,
-                        course_id=course_id,
-                        model_type=model_name,
-                        target=target,
-                        predicted_score=row[target][model_name],
-                        prediction_date=date.today(),
-                    ))
-        db.session.commit()
-        from app.notifications import check_prediction_alert
-        for row in student_preds:
-            s = row['student']
-            score = row['next_exam']['linear_regression']
-            check_prediction_alert(s, selected_course.course_name, score)
-        db.session.commit()
-        flash('Predictions saved.', 'success')
+        # Auto-save predictions and send notifications immediately
+        if student_preds:
+            Prediction.query.filter_by(course_id=course_id).delete()
+            for row in student_preds:
+                s = row['student']
+                for target in ('next_exam', 'final_grade'):
+                    for model_name in ('linear_regression', 'decision_tree'):
+                        db.session.add(Prediction(
+                            student_id=s.student_id,
+                            course_id=course_id,
+                            model_type=model_name,
+                            target=target,
+                            predicted_score=row[target][model_name],
+                            prediction_date=date.today(),
+                        ))
+            db.session.commit()
+            from app.notifications import check_prediction_alert
+            for row in student_preds:
+                check_prediction_alert(
+                    row['student'],
+                    selected_course.course_name,
+                    row['next_exam']['linear_regression'],
+                )
+            db.session.commit()
 
     return render_template('teacher/prediction_dashboard.html',
                            courses=courses,

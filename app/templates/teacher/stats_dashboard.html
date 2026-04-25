@@ -99,7 +99,9 @@
 <div class="card shadow-sm mb-4">
     <div class="card-header fw-bold bg-dark text-white">Grade Distribution (A/B/C/D/F)</div>
     <div class="card-body">
-        <canvas id="chartDist" style="max-height:320px"></canvas>
+        <div style="position:relative;height:320px">
+            <canvas id="chartDist"></canvas>
+        </div>
     </div>
 </div>
 
@@ -181,6 +183,7 @@ new Chart(document.getElementById('chartDist'), {
     },
     options: {
         responsive: true,
+        maintainAspectRatio: false,
         plugins: { legend: { position: 'bottom' } },
         scales: {
             x: { stacked: true },

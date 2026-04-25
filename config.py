@@ -10,7 +10,7 @@ class Config:
     # TODO: move credentials to environment variables once deployment is stable.
     SQLALCHEMY_DATABASE_URI = os.environ.get(
         'DATABASE_URL',
-        'mysql+pymysql://sql8823462:X9U33XRNdX@sql8.freesqldatabase.com:3306/sql8823462'
+        'sqlite:///studentms.db'
     )
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False

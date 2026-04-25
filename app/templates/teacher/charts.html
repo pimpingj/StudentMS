@@ -8,7 +8,9 @@
         <div class="card shadow-sm">
             <div class="card-header fw-bold">Average Grade per Course</div>
             <div class="card-body">
-                <canvas id="chartGrades" height="220"></canvas>
+                <div style="position:relative;height:220px">
+                    <canvas id="chartGrades"></canvas>
+                </div>
             </div>
         </div>
     </div>
@@ -16,7 +18,9 @@
         <div class="card shadow-sm">
             <div class="card-header fw-bold">Average Attendance Rate per Course (%)</div>
             <div class="card-body">
-                <canvas id="chartAttendance" height="220"></canvas>
+                <div style="position:relative;height:220px">
+                    <canvas id="chartAttendance"></canvas>
+                </div>
             </div>
         </div>
     </div>
@@ -46,6 +50,7 @@ new Chart(document.getElementById('chartGrades'), {
     },
     options: {
         responsive: true,
+        maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: {
             y: { beginAtZero: true, max: 100,
@@ -68,6 +73,7 @@ new Chart(document.getElementById('chartAttendance'), {
     },
     options: {
         responsive: true,
+        maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: {
             y: { beginAtZero: true, max: 100,
