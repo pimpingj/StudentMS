@@ -1,19 +1,21 @@
 """
-Remote database initialisation script — full dataset.
+Database seed script — full dataset.
 Run from project root: python init_remote_db.py
 Safe to re-run (clears and re-seeds every time).
+Also callable as seed() from within an existing app context.
 """
-from app import create_app, db
-from app.models import (User, Class, Teacher, Student, Course,
-                        Exam, Grade, Attendance, Notification,
-                        Prediction, exam_classes)
 from datetime import date, time, timedelta, datetime
 import random
 
-random.seed(42)
-app = create_app()
 
-with app.app_context():
+def seed():
+    """Seed the database. Must be called inside an active app context."""
+    from app import db
+    from app.models import (User, Class, Teacher, Student, Course,
+                            Exam, Grade, Attendance, Notification,
+                            Prediction, exam_classes)
+
+    random.seed(42)
 
     # ── 1. Create tables ───────────────────────────────────────────────────────
     print("Creating tables...")
@@ -73,15 +75,13 @@ with app.app_context():
 
     # ── 6. Students (20 total: 7 + 7 + 6) ────────────────────────────────────
     student_rows = [
-        # Year 10A — teacher_a's class; student_04 is the demo at-risk student
         ('student_01', 'Liam Turner',      'Male',   '2010-03-14', cls_10a),
         ('student_02', 'Sophia Clark',     'Female', '2010-07-22', cls_10a),
         ('student_03', 'Noah Evans',       'Male',   '2010-11-05', cls_10a),
-        ('student_04', 'Mia Robinson',     'Female', '2010-01-30', cls_10a),  # at-risk demo
+        ('student_04', 'Mia Robinson',     'Female', '2010-01-30', cls_10a),
         ('student_05', 'James Wright',     'Male',   '2010-05-18', cls_10a),
         ('student_06', 'Emily Scott',      'Female', '2010-09-02', cls_10a),
         ('student_07', 'Benjamin Harris',  'Male',   '2010-12-20', cls_10a),
-        # Year 11A — teacher_b's class
         ('student_08', 'Oliver Thomas',    'Male',   '2009-02-08', cls_11a),
         ('student_09', 'Charlotte Walker', 'Female', '2009-06-15', cls_11a),
         ('student_10', 'Elijah Hall',      'Male',   '2009-10-27', cls_11a),
@@ -89,7 +89,6 @@ with app.app_context():
         ('student_12', 'Isabella King',    'Female', '2009-08-19', cls_11a),
         ('student_13', 'Mason Green',      'Male',   '2009-12-11', cls_11a),
         ('student_14', 'Ava Martinez',     'Female', '2009-03-25', cls_11a),
-        # Year 12A — teacher_c's class
         ('student_15', 'Alex Johnson',     'Male',   '2008-04-12', cls_12a),
         ('student_16', 'Beth Williams',    'Female', '2008-07-22', cls_12a),
         ('student_17', 'Chris Lee',        'Male',   '2008-11-05', cls_12a),
@@ -115,7 +114,6 @@ with app.app_context():
         return [s for s in all_students if s.class_id == cls.class_id]
 
     # ── 7. Courses ────────────────────────────────────────────────────────────
-    # teacher_d (David Brown) teaches Chemistry/Biology across Year 10A & 11A
     course_rows = [
         ('Mathematics',           ta.teacher_id, cls_10a.class_id),
         ('Physics',               ta.teacher_id, cls_10a.class_id),
@@ -137,7 +135,7 @@ with app.app_context():
     def courses_for(cls):
         return [c for c in courses if c.class_id == cls.class_id]
 
-    # ── 8. Exams (4 per class: 3 past + 1 upcoming) ───────────────────────────
+    # ── 8. Exams ──────────────────────────────────────────────────────────────
     today = date.today()
 
     exam_schedule = {
@@ -174,29 +172,11 @@ with app.app_context():
 
     # ── 9. Grades ─────────────────────────────────────────────────────────────
     base_scores = {
-        # Year 10A
-        'student_01': 82,   # solid
-        'student_02': 91,   # high achiever
-        'student_03': 67,   # average
-        'student_04': 55,   # at-risk — kept intentionally low
-        'student_05': 78,
-        'student_06': 73,
-        'student_07': 85,
-        # Year 11A
-        'student_08': 74,
-        'student_09': 93,   # high achiever
-        'student_10': 58,   # at-risk
-        'student_11': 70,
-        'student_12': 85,
-        'student_13': 61,
-        'student_14': 77,
-        # Year 12A
-        'student_15': 80,
-        'student_16': 65,
-        'student_17': 88,
-        'student_18': 72,
-        'student_19': 60,
-        'student_20': 76,
+        'student_01': 82, 'student_02': 91, 'student_03': 67, 'student_04': 55,
+        'student_05': 78, 'student_06': 73, 'student_07': 85, 'student_08': 74,
+        'student_09': 93, 'student_10': 58, 'student_11': 70, 'student_12': 85,
+        'student_13': 61, 'student_14': 77, 'student_15': 80, 'student_16': 65,
+        'student_17': 88, 'student_18': 72, 'student_19': 60, 'student_20': 76,
     }
 
     for cls in classes:
@@ -220,30 +200,15 @@ with app.app_context():
     db.session.commit()
     print("Grades inserted.")
 
-    # ── 10. Attendance (8 weeks, Mon/Wed/Fri) ──────────────────────────────────
+    # ── 10. Attendance (8 weeks, Mon/Wed/Fri) ─────────────────────────────────
     lesson_times = [time(9, 0), time(13, 0), time(15, 30)]
 
     att_rates = {
-        'student_01': 0.88,
-        'student_02': 0.95,
-        'student_03': 0.72,
-        'student_04': 0.62,   # below 75% — risk alert
-        'student_05': 0.90,
-        'student_06': 0.85,
-        'student_07': 0.80,
-        'student_08': 0.91,
-        'student_09': 0.97,
-        'student_10': 0.60,   # below 75%
-        'student_11': 0.80,
-        'student_12': 0.93,
-        'student_13': 0.68,   # below 75%
-        'student_14': 0.82,
-        'student_15': 0.78,
-        'student_16': 0.65,   # below 75%
-        'student_17': 0.94,
-        'student_18': 0.75,
-        'student_19': 0.83,
-        'student_20': 0.89,
+        'student_01': 0.88, 'student_02': 0.95, 'student_03': 0.72, 'student_04': 0.62,
+        'student_05': 0.90, 'student_06': 0.85, 'student_07': 0.80, 'student_08': 0.91,
+        'student_09': 0.97, 'student_10': 0.60, 'student_11': 0.80, 'student_12': 0.93,
+        'student_13': 0.68, 'student_14': 0.82, 'student_15': 0.78, 'student_16': 0.65,
+        'student_17': 0.94, 'student_18': 0.75, 'student_19': 0.83, 'student_20': 0.89,
     }
 
     for cls in classes:
@@ -278,7 +243,6 @@ with app.app_context():
     # ── 11. Notifications ─────────────────────────────────────────────────────
     now = datetime.utcnow()
 
-    # student_04 (Mia Robinson) — demo at-risk student for teacher_a
     stu_04_user = User.query.filter_by(username='student_04').first()
     db.session.add_all([
         Notification(user_id=stu_04_user.user_id, is_read=False,
@@ -295,7 +259,6 @@ with app.app_context():
                              "for class Year 10 - Class A."),
     ])
 
-    # student_10 (Elijah Hall) — at-risk in Year 11A
     stu_10_user = User.query.filter_by(username='student_10').first()
     db.session.add_all([
         Notification(user_id=stu_10_user.user_id, is_read=False,
@@ -308,7 +271,6 @@ with app.app_context():
                              "which is below 60. Consider seeking additional support."),
     ])
 
-    # student_16 (Beth Williams) — at-risk in Year 12A
     stu_16_user = User.query.filter_by(username='student_16').first()
     db.session.add_all([
         Notification(user_id=stu_16_user.user_id, is_read=False,
@@ -319,28 +281,15 @@ with app.app_context():
 
     db.session.commit()
 
-    # ── Summary ───────────────────────────────────────────────────────────────
     grade_count = Grade.query.count()
     att_count   = Attendance.query.count()
-
     print("\n=== Database seeded successfully ===")
-    print()
-    print("ACCOUNTS")
-    print(f"  admin      / admin123   (Admin)")
-    print(f"  teacher_a~d / teacher123 (4 Teachers)")
-    print(f"  student_01~20 / student123 (20 Students)")
-    print()
-    print("TEST ACCOUNTS (demo trio)")
-    print(f"  admin      / admin123   — Admin dashboard")
-    print(f"  teacher_a  / teacher123 — Alice Smith, Year 10A (Math/Physics/Chemistry)")
-    print(f"  student_04 / student123 — Mia Robinson, Year 10A (at-risk: low attendance + grades)")
-    print()
-    print("CLASSES & HOMEROOM TEACHERS")
-    for cls in classes:
-        t = Teacher.query.get(cls.teacher_id)
-        print(f"  {cls.class_name:30s} → {t.name}")
-    print()
-    print("COURSES:", len(courses))
-    print("EXAMS:  ", sum(len(v) for v in all_exams_by_class.values()))
-    print("GRADES: ", grade_count)
-    print("ATTEND: ", att_count)
+    print(f"Grades: {grade_count}  Attendance: {att_count}")
+    print("admin/admin123  |  teacher_a~d/teacher123  |  student_01~20/student123")
+
+
+if __name__ == '__main__':
+    from app import create_app
+    app = create_app()
+    with app.app_context():
+        seed()
