@@ -11,7 +11,7 @@ class User(UserMixin, db.Model):
     user_id       = db.Column(db.Integer, primary_key=True, autoincrement=True)
     username      = db.Column(db.String(80), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
-    role = db.Column(db.Enum('admin', 'teacher', 'student'), nullable=False)
+    role = db.Column(db.Enum('admin', 'teacher', 'student', name='user_role'), nullable=False)
     created_at    = db.Column(db.DateTime, default=datetime.utcnow)
 
     student_profile = db.relationship('Student', backref='user', uselist=False)
@@ -61,7 +61,7 @@ class Student(db.Model):
     student_id    = db.Column(db.Integer, primary_key=True, autoincrement=True)
     user_id       = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
     name          = db.Column(db.String(100), nullable=False)
-    gender = db.Column(db.Enum('Male', 'Female', 'Other'), nullable=False)
+    gender = db.Column(db.Enum('Male', 'Female', 'Other', name='student_gender'), nullable=False)
     date_of_birth = db.Column(db.Date, nullable=True)
     class_id      = db.Column(db.Integer, db.ForeignKey('classes.class_id'), nullable=True)
 
@@ -125,7 +125,7 @@ class Attendance(db.Model):
     course_id     = db.Column(db.Integer, db.ForeignKey('courses.course_id'),   nullable=False)
     date          = db.Column(db.Date, default=date.today, nullable=False)
     lesson_time   = db.Column(db.Time, nullable=True)
-    status = db.Column(db.Enum('present', 'absent', 'late'), nullable=False)
+    status = db.Column(db.Enum('present', 'absent', 'late', name='attendance_status'), nullable=False)
 
 
 # ── 11. notifications ─────────────────────────────────
@@ -146,7 +146,7 @@ class Prediction(db.Model):
     prediction_id   = db.Column(db.Integer, primary_key=True, autoincrement=True)
     student_id      = db.Column(db.Integer, db.ForeignKey('students.student_id'), nullable=False)
     course_id       = db.Column(db.Integer, db.ForeignKey('courses.course_id'),   nullable=False)
-    model_type = db.Column(db.Enum('linear_regression', 'decision_tree'), nullable=False)
-    target = db.Column(db.Enum('next_exam', 'final_grade'), nullable=False)
+    model_type = db.Column(db.Enum('linear_regression', 'decision_tree', name='prediction_model_type'), nullable=False)
+    target = db.Column(db.Enum('next_exam', 'final_grade', name='prediction_target'), nullable=False)
     predicted_score = db.Column(db.Float, nullable=False)
     prediction_date = db.Column(db.Date, default=date.today)
